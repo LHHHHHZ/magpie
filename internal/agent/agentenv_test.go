@@ -39,15 +39,18 @@ var notAnAgent = map[string]string{
 // meeting the agent a developer really has installed — which is how #522 came
 // about, four sandboxes clearing lists of their own that had each drifted.
 //
-// 扫描本包、sessions、provider、library 和 gateway 这五个包的源文件。
-// 使用文件读取而非 import：sessions 和 provider 的包内测试不能反向
-// import 本包，因为本包已依赖它们。扫描检查的是源码中的读取写法。
+// The five packages are this one, sessions, provider, library and gateway:
+// every agent's folder variable magpie reads is read in one of them, and the
+// rest of the repository reads only magpie's own variables, the process' and
+// the desktop's. Their sources are read as files rather than imported, since a
+// test in sessions or provider cannot import this package, which imports
+// them; what the walk looks at is what they say, not what they do.
 //
 // What this cannot see is a variable read through a name the sources build at
 // runtime, as omoDir reads OMO_CODING_AGENT_DIR and SENPI_CODING_AGENT_DIR
-// out of a slice. Both are in agentenv.Vars; a third taken the same way would
-// not be caught here.
-// 常量保存的变量名也无法识别，例如 const fooEnv = "FOO_HOME" 后的 os.Getenv(fooEnv)。
+// out of a slice, or through a constant (const fooEnv = "FOO_HOME" and then
+// os.Getenv(fooEnv)). Both are in agentenv.Vars; a third taken either way
+// would not be caught here.
 func TestFolderVarsAreListed(t *testing.T) {
 	listed := make(map[string]bool, len(agentenv.Vars))
 	for _, v := range agentenv.Vars {
